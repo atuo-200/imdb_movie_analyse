@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>IMDB电影数据分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@4.8.0/dist/echarts.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/1.10.0/jquery.min.js"></script>
+    <script src="https://echarts-www.cdn.bcebos.com/zh/asset/theme/macarons.js"></script>
+    <script src="/static/echarts-wordcloud.min.js"></script>
+    <style>
+        body {
+            background-image: url("/static/bg.jpeg");
+        }
+        
+        h1 {
+            color: #fff;
+        }
+        
+        #box1,
+        #box2,
+        #box3,
+        #box4,
+        #box5,
+        #box6 {
+            background-color: azure!important;
+            display: inline-block;
+        }
+        
+        .contain {
+            text-align: center;
+        }
+        
+        .public {
+            width: 550px;
+            height: 500px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 8px #aaa inset;
+        }
+        
+        .empty {
+            height: 30px;
+        }
+        /* 表格样式如下 */
+        
+        .mytable {
+            width: 70%;
+            margin: 0 auto;
+        }
+        
+        .mytable th {
+            background-color: #93DAFF;
+            color: #000000
+        }
+        
+        .mytable,
+        .mytable th,
+        .mytable td {
+            font-size: 0.95em;
+            text-align: center;
+            padding: 4px;
+            border: 1px solid #dddddd;
+            border-collapse: collapse
+        }
+        
+        .mytable tr:nth-child(odd) {
+            background-color: #dbf2fe;
+        }
+        
+        .mytable tr:nth-child(even) {
+            background-color: #fdfdfd;
+        }
+    </style>
+    </style>
+</head>
+
+<body>
+    <h1 align="center" class="title" data-in-effect="rollIn">IMDB电影数据分析图表</h1>
+    <div class="empty"></div>
+    <div class="contain">
+        <div id="box1" class="public"></div>
+        <div id="box2" class="public"></div>
+        <div id="box3" class="public"></div>
+        <div id="box4" class="public"></div>
+        <div id="box5" class="public"></div>
+        <div id="box6" class="public"></div>
+    </div>
+    <script>
+        var genre_chart = echarts.init(document.getElementById('box1'), "macarons");
+        $.getJSON("/static/plot_genre_num.json", function(data) {
+
+            dataAxis = Object.keys(data);
+            dataValue = []
+            $.each(data, function(key, val) {
+                dataValue.push({
+                    "value": val,
+                    "name": key
+                })
+            });
+            console.log(dataValue)
+
+            var option = {
+                title: {
+                    text: '各类型专辑的数量统计图',
+                    x: 'left'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: "{a} <br/>{b} : {c} ({d}%)"
+                },
+                legend: {
+                    type: 'scroll',
+                    orient: 'vertical',
+                    right: 10,
+                    top: 25,
+                    bottom: 15,
+                    data: dataAxis,
+                    selected: {}
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        mark: {
+                            show: true
+                        },
+                        dataView: {
+                            show: true,
+                            readOnly: false
+                        },
+                        magicType: {
+                            show: true,
+                            type: ['pie', 'funnel']
+                        },
+                        restore: {
+                            show: true
+                        },
+                        saveAsImage: {
+                            show: true
+                        }
+                    }
+                },
+                calculable: true,
+                series: [{
+                    name: '电影类型比重',
+                    type: 'pie',
+                    radius: [30, 160],
+                    startAngle: 180,
+                    center: ['45%', '50%'],
+                    label: {
+                        normal: {
+                            show: true
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    lableLine: {
+                        normal: {
+                            show: true
+                        },
+                        emphasis: {
+                            show: true
+                        }
+                    },
+                    data: dataValue
+                }]
+            };
+
+            //js实现饼图图例加载一部分图例（图例过多，全显示会眼杂）
+            var selected_item = {}
+            for (i = 0; i < dataAxis.length; i++) {
+                var key_name = dataAxis[i];
+                if (i >= 8) {
+                    selected_item[key_name] = false;
+                } else {
+                    selected_item[key_name] = true;
+                }
+            };
+            option.legend.selected = selected_item
+
+            genre_chart.setOption(option);
+        })
+
+
+        var country_chart = echarts.init(document.getElementById('box2'), 'macarons');
+        $.getJSON("/static/plot_state_num.json", function(data) {
+            dataValue = [];
+            $.each(data, function(key, val) {
+                dataValue.push({
+                    "name": key,
+                    "value": val
+                })
+            })
+
+            option = {
+                title: {
+                    text: '不同地区的上映电影数量',
+                },
+                tooltip: {
+                    trigger: 'item',
+                    formatter: "{b}: {c}"
+                },
+                toolbox: {
+                    show: true,
+                    feature: {
+                        mark: {
+                            show: true
+                        },
+                        dataView: {
+                            show: true,
+                            readOnly: false
+                        },
+                        restore: {
+                            show: true
+                        },
+                        saveAsImage: {
+                            show: true
+                        }
+                    }
+                },
+                calculable: false,
+                series: [{
+                    name: '矩形树图',
+                    type: 'treemap',
+                    itemStyle: {
+                        normal: {
+                            label: {
+                                show: true,
+                                formatter: "{b}"
+                            },
+                            borderWidth: 1
+                        },
+                        emphasis: {
+                            label: {
+                                show: true
+                            }
+                        }
+                    },
+                    data: dataValue
+                }]
+            };
+            country_chart.setOption(option)
+        })
+
+
+        var years_chart = echarts.init(document.getElementById('box3'), 'macarons');
+        $.getJSON("/static/plot_years_num.json", function(data) {
+            dataAxis = Object.keys(data);
+            dataValue = Object.values(data);
+
+            option = {
+                title: {
+                    text: '不同年份的电影数量',
+                    x: 'left'
+                },
+                color: ['#3398DB'],
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { // 坐标轴指示器，坐标轴触发有效
+                        type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '10%',
+                    containLabel: true
+                },
+                xAxis: [{
+                    type: 'category',
+                    data: dataAxis,
+                    axisTick: {
+                        show: true,
+                        alignWithLabel: true,
+                        interval: 0
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45,
+                    }
+                }],
+                dataZoom: [{
+                    type: 'inside',
+                    textStyle: false,
+                    backgroundColor: "rgba(47,69,84,0)",
+                    start: 40, //数据窗口范围的起始百分比,表示30%
+                    end: 60,
+                }, {
+                    type: 'slider',
+                    textStyle: false
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: 'Million Albums',
+                    nameLocation: 'middle',
+                    nameGap: 50
+                }],
+                series: [{
+                    name: "不同年份的电影数量",
+                    type: 'bar',
+                    barWidth: '60%',
+                    data: dataValue
+                }]
+            };
+            years_chart.setOption(option);
+        })
+
+        var grade_chart = echarts.init(document.getElementById("box4"), 'macarons');
+        $.getJSON("/static/plot_grade_cut.json", function(data) {
+            dataAxis = Object.keys(data);
+            dataValue = Object.values(data);
+
+            option = {
+                title: {
+                    text: '电影评分分布',
+                    x: 'left',
+                },
+                color: ['#3398DB'],
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { // 坐标轴指示器，坐标轴触发有效
+                        type: 'shadow' // 默认为直线，可选为：'line' | 'shadow'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '10%',
+                    containLabel: true
+                },
+                xAxis: [{
+                    type: 'category',
+                    data: dataAxis,
+                    axisTick: {
+                        show: true,
+                        alignWithLabel: true,
+                        interval: 0
+                    },
+                    axisLabel: {
+                        interval: 0,
+                        rotate: 45,
+                    }
+                }],
+                yAxis: [{
+                    type: 'value',
+                    name: 'Million Albums',
+                    nameLocation: 'middle',
+                    nameGap: 50
+                }],
+                series: [{
+                    name: "电影评分分布",
+                    type: 'bar',
+                    barWidth: '60%',
+                    data: dataValue
+                }]
+            };
+            grade_chart.setOption(option);
+        })
+
+        var actors_chart = echarts.init(document.getElementById('box5'), 'macarons');
+        $.getJSON("/static/plot_actors_num.json", function(data) {
+            actors_data = []
+            $.each(data, function(key, val) {
+                actors_data.push({
+                    "name": key,
+                    "value": val
+                })
+
+            })
+            option = {
+                title: {
+                    text: "演员在优秀电影中的参与度"
+                },
+                tooltip: {},
+                //数据项触发工具，保持默认配置
+                toolbox: {
+                    show: true,
+                    feature: {
+                        dataView: {
+                            show: true,
+                            readOnly: true,
+
+                            optionToContent: function(opt) {
+                                var actors_name = Object.keys(data); //演员名字
+                                var series = opt.series;
+                                let tdHeads = '<th>演员</th>' + '<th>次数</th>'; //表头
+                                let tdBodys = ''; //数据
+                                let table = `<table class="mytable"><thead><tr>${tdHeads} </tr></thead><tbody>`;
+                                for (let i = 0, l = actors_data.length; i < l; i++) {
+                                    tdBodys += `<td>${actors_data[i]["value"]}</td>`;
+
+                                    table += `<tr><td>${actors_data[i]["name"]}</td>${tdBodys}</tr>`;
+                                    tdBodys = '';
+                                }
+                                table += '</tbody></table>';
+                                return table;
+                            }
+
+                        },
+                        restore: {
+                            show: true
+                        },
+                        saveAsImage: {
+                            show: true
+                        }
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '10%',
+                    containLabel: true
+                },
+
+                series: [{
+                    type: 'wordCloud',
+                    gridSize: 2,
+                    //字体大小范围
+                    sizeRange: [5, 28],
+                    //字体旋转角度范围
+                    rotationRange: [0, 0],
+                    //词云图形状
+                    shape: 'pentagon',
+                    drawOutOfBound: false,
+                    textStyle: {
+                        //字体随机颜色
+                        normal: {
+                            color: function() {
+                                return 'rgb(' + [
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160)
+                                ].join(',') + ')';
+                            }
+                        },
+                        emphasis: {
+                            //阴影距离
+                            shadowBlur: 10,
+                            //阴影颜色
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: actors_data
+                }]
+            };
+            actors_chart.setOption(option);
+        })
+
+
+        var director_chart = echarts.init(document.getElementById('box6'), 'macarons');
+        $.getJSON("/static/plot_director_num.json", function(data) {
+            director_data = []
+            $.each(data, function(key, val) {
+                director_data.push({
+                    "name": key,
+                    "value": val
+                })
+
+            })
+            option = {
+                title: {
+                    text: "导演在优秀电影中的参与度"
+                },
+                tooltip: {},
+                //数据项触发工具，保持默认配置
+                toolbox: {
+                    show: true,
+                    feature: {
+                        dataView: {
+                            show: true,
+                            readOnly: true,
+
+                            optionToContent: function(opt) {
+                                var director_name = Object.keys(data); //导演名字
+                                var series = opt.series;
+                                let tdHeads = '<th>导演</th>' + '<th>次数</th>'; //表头
+                                let tdBodys = ''; //数据
+                                let table = `<table class="mytable"><thead><tr>${tdHeads} </tr></thead><tbody>`;
+                                for (let i = 0, l = director_data.length; i < l; i++) {
+                                    tdBodys += `<td>${director_data[i]["value"]}</td>`;
+
+                                    table += `<tr><td>${director_data[i]["name"]}</td>${tdBodys}</tr>`;
+                                    tdBodys = '';
+                                }
+                                table += '</tbody></table>';
+                                return table;
+                            }
+
+                        },
+                        restore: {
+                            show: true
+                        },
+                        saveAsImage: {
+                            show: true
+                        }
+                    }
+                },
+                series: [{
+                    type: 'wordCloud',
+                    gridSize: 2,
+                    //字体大小范围
+                    sizeRange: [8, 30],
+                    //字体旋转角度范围
+                    rotationRange: [0, 0],
+                    //词云图形状
+                    shape: 'pentagon',
+                    drawOutOfBound: false,
+                    textStyle: {
+                        //字体随机颜色
+                        normal: {
+                            color: function() {
+                                return 'rgb(' + [
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160),
+                                    Math.round(Math.random() * 160)
+                                ].join(',') + ')';
+                            }
+                        },
+                        emphasis: {
+                            //阴影距离
+                            shadowBlur: 10,
+                            //阴影颜色
+                            shadowColor: '#333'
+                        }
+                    },
+                    data: director_data
+                }]
+            };
+            director_chart.setOption(option);
+        })
+    </script>
+</body>
+
+</html>
